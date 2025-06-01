@@ -1,5 +1,7 @@
 import logging
 import pandas as pd
+from sklearn.metrics import ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 from data_loader import load_wisconsin
 from evaluate import evaluate, plot_curves, plot_metric_bars
@@ -54,6 +56,21 @@ def main():
         logging.info(f"Evaluating ➜ {name}")
         metrics = evaluate(tuned_model, x_test, y_test, anomaly_label=0)
         plot_curves(name, metrics)
+        y_pred = tuned_model.predict(x_test)
+
+        # Normalize predictions and ground truth: anomaly=0, benign=1
+        y_pred_binary = [0 if p == -1 else 1 for p in y_pred]
+        y_test_binary = [0 if t == 0 else 1 for t in y_test]
+
+        disp = ConfusionMatrixDisplay.from_predictions(
+            y_test_binary,
+            y_pred_binary,
+            display_labels=["Anomaly", "Benign"],
+            cmap="Blues",
+        )
+        plt.title(f"{name} Confusion Matrix")
+        plt.savefig(f"figures/confusion_matrix_{name}.png")
+        plt.close()
         metrics["model"] = name
         results.append(metrics)
 
